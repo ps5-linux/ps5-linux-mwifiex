@@ -11,6 +11,7 @@ script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd)
 BUILD_DIR=$script_dir/build
 DRIVER_DIR=$BUILD_DIR/mwifiex
 PATCH_FILE=$script_dir/ps5-iw620.patch
+RECOVER_PATCH=$script_dir/ps5-iw620-cmd-timeout-recover.patch
 
 MODULE_DIR=/lib/modules/$KERNEL_RELEASE/extra/ps5-iw620
 MODPROBE_CONF=/etc/modprobe.d/ps5-iw620.conf
@@ -76,6 +77,16 @@ prepare_source() {
 		say "PS5 IW620 patch is already applied"
 	else
 		die "patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	[ -f "$RECOVER_PATCH" ] || die "patch file not found: $RECOVER_PATCH"
+	if git_driver apply --check "$RECOVER_PATCH" >/dev/null 2>&1; then
+		say "Applying PS5 IW620 command-timeout recovery patch"
+		git_driver apply "$RECOVER_PATCH"
+	elif git_driver apply -R --check "$RECOVER_PATCH" >/dev/null 2>&1; then
+		say "PS5 IW620 command-timeout recovery patch is already applied"
+	else
+		die "recovery patch does not apply cleanly in $DRIVER_DIR"
 	fi
 }
 
