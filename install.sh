@@ -18,7 +18,7 @@ MODPROBE_CONF=/etc/modprobe.d/ps5-iw620.conf
 FW_NAME=nxp/pcieuartiw620_combo_v1.bin
 FW_PATH=/lib/firmware/$FW_NAME
 
-MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=1 auto_fw_reload=0 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1"
+MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=1 auto_fw_reload=0 wifi_reset_config=0 sched_scan=0 ps_mode=0 auto_ds=0 amsdu_disable=0"
 
 usage() {
 	cat <<EOF
