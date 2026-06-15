@@ -12,6 +12,7 @@ BUILD_DIR=$script_dir/build
 DRIVER_DIR=$BUILD_DIR/mwifiex
 PATCH_FILE=$script_dir/ps5-iw620.patch
 RECOVER_PATCH=$script_dir/ps5-iw620-cmd-timeout-recover.patch
+KERNEL71_PATCH=$script_dir/ps5-iw620-kernel71-compat.patch
 
 MODULE_DIR=/lib/modules/$KERNEL_RELEASE/extra/ps5-iw620
 MODPROBE_CONF=/etc/modprobe.d/ps5-iw620.conf
@@ -87,6 +88,19 @@ prepare_source() {
 		say "PS5 IW620 command-timeout recovery patch is already applied"
 	else
 		die "recovery patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	KERNEL_MAJOR=$(uname -r | cut -d. -f1)
+	if [ "$KERNEL_MAJOR" -ge 7 ]; then
+		[ -f "$KERNEL71_PATCH" ] || die "patch file not found: $KERNEL71_PATCH"
+		if git_driver apply --check "$KERNEL71_PATCH" >/dev/null 2>&1; then
+			say "Applying kernel 7.1 cfg80211 API compatibility patch"
+			git_driver apply "$KERNEL71_PATCH"
+		elif git_driver apply -R --check "$KERNEL71_PATCH" >/dev/null 2>&1; then
+			say "Kernel 7.1 cfg80211 API compatibility patch is already applied"
+		else
+			die "kernel71 compat patch does not apply cleanly in $DRIVER_DIR"
+		fi
 	fi
 }
 
