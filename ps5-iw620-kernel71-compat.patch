@@ -107,15 +107,6 @@ diff --git a/mlinux/moal_shim.c b/mlinux/moal_shim.c
 index 7aebbdf..7ae4af8 100644
 --- a/mlinux/moal_shim.c
 +++ b/mlinux/moal_shim.c
-@@ -3784,7 +3784,7 @@ mlan_status moal_recv_event(t_void *pmoal, pmlan_event pmevent)
- 			moal_memcpy_ext(priv->phandle, wrqu.ap_addr.sa_data,
- 					pmevent->event_buf, ETH_ALEN,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 80)
--					sizeof(wrqu.ap_addr.sa_data_min));
-+					sizeof(wrqu.ap_addr.sa_data));
- #else
- 					sizeof(wrqu.ap_addr.sa_data));
- #endif
 @@ -5038,7 +5038,7 @@ mlan_status moal_recv_event(t_void *pmoal, pmlan_event pmevent)
  				}
  #endif /* KERNEL_VERSION */
@@ -174,27 +165,6 @@ index 58d4592..05e820f 100644
  #if CFG80211_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
  				     const u8 *mac,
  #else
-@@ -5628,6 +5628,20 @@ static int woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
- 	}
- #endif
- 
-+	if (priv->media_connected == MTRUE) {
-+		PRINTM(MMSG,
-+		       "Fake-complete connected-state scan on %s for PS5 IW620 stability\n",
-+		       dev->name);
-+		spin_lock_irqsave(&priv->phandle->scan_req_lock, flags);
-+		priv->phandle->fake_scan_complete = MTRUE;
-+		priv->phandle->scan_request = request;
-+		spin_unlock_irqrestore(&priv->phandle->scan_req_lock, flags);
-+		queue_delayed_work(priv->phandle->evt_workqueue,
-+				   &priv->phandle->scan_timeout_work,
-+				   msecs_to_jiffies(1000));
-+		return ret;
-+	}
-+
- 	/** Cance remain on channel */
- 	woal_cancel_remain_on_channel(priv);
- 
 @@ -6913,7 +6927,7 @@ static int woal_cfg80211_disassociate(struct wiphy *wiphy,
   * @return                0 -- success, otherwise fail
   */
