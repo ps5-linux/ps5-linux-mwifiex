@@ -68,6 +68,19 @@ index 3db5448..c574f96 100644
  	else if (pmadapter->init_para.ext_scan == EXT_SCAN_TYPE_ENH)
  		pmadapter->ext_scan = EXT_SCAN_TYPE_ENH;
  	else
+diff --git a/mlan/mlan_scan.c b/mlan/mlan_scan.c
+index 75105c4..40a4bab 100644
+--- a/mlan/mlan_scan.c
++++ b/mlan/mlan_scan.c
+@@ -5761,7 +5761,7 @@ mlan_status wlan_ret_802_11_scan(mlan_private *pmpriv, HostCmd_DS_COMMAND *resp,
+ 	 *   BSS Descriptions (bss_descript_size as bytesLef) and the command
+ 	 *   response header (S_DS_GEN)
+ 	 */
+-	if (scan_resp_size >
++	if (scan_resp_size >=
+ 	    (bytes_left + sizeof(pscan_rsp->bss_descript_size) +
+ 	     sizeof(pscan_rsp->number_of_sets) + S_DS_GEN)) {
+ 		tlv_buf_size =
 diff --git a/mlinux/moal_init.c b/mlinux/moal_init.c
 index a8ece12..e244de9 100644
 --- a/mlinux/moal_init.c
@@ -94,10 +107,25 @@ index 5beade4..9661285 100644
  static moal_if_ops pcie_ops;
  
 diff --git a/mlinux/moal_sta_cfg80211.c b/mlinux/moal_sta_cfg80211.c
-index 23ffe02..459b937 100644
+index 23ffe02..57e54ed 100644
 --- a/mlinux/moal_sta_cfg80211.c
 +++ b/mlinux/moal_sta_cfg80211.c
-@@ -5778,6 +5778,19 @@ static int woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
+@@ -1622,6 +1622,14 @@ static mlan_status woal_dnld_chan_attr(moal_private *priv, t_bool is6g,
+ #endif
+ 	wiphy = priv->wdev->wiphy;
+ 
++#if defined(PCIE9097)
++	if (IS_PCIE9097(priv->phandle->card_type)) {
++		PRINTM(MMSG,
++		       "Skip channel attribute download for PS5 IW620\n");
++		goto done;
++	}
++#endif
++
+ 	/* Allocate an IOCTL request buffer */
+ 	req = woal_alloc_mlan_ioctl_req(sizeof(mlan_ds_misc_cfg));
+ 	if (req == NULL) {
+@@ -5778,6 +5786,19 @@ static int woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
  	}
  #endif
  
