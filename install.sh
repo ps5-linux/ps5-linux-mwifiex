@@ -2,7 +2,7 @@
 set -eu
 
 REPO_URL=https://github.com/nxp-imx/mwifiex.git
-REF=lf-6.18.2_1.0.0
+REF=lf-6.18.20_2.0.0
 
 KERNEL_RELEASE=$(uname -r)
 KERNELDIR=/lib/modules/$KERNEL_RELEASE/build

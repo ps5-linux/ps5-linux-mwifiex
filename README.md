@@ -24,7 +24,7 @@ Run from this package root:
 
 ```sh
 git clone https://github.com/nxp-imx/mwifiex.git && cd mwifiex
-git checkout lf-6.18.2_1.0.0
+git checkout lf-6.18.20_2.0.0
 git apply ../ps5-iw620.patch
 make CONFIG_OBJTOOL=
 ```

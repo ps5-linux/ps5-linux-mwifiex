@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index 2f9ff1e..6bf6f79 100644
+index ff0d7dc..b963d85 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -35,23 +35,23 @@ CONFIG_SD8897=n
@@ -27,7 +27,8 @@ index 2f9ff1e..6bf6f79 100644
 +CONFIG_SDIW610=n
 +CONFIG_USBIW610=n
  CONFIG_SDIW624=n
- CONFIG_SDAW693=n
+-CONFIG_SDAW693=y
++CONFIG_SDAW693=n
  CONFIG_PCIEIW624=n
  CONFIG_USBIW624=n
 -CONFIG_PCIEAW693=y
@@ -45,7 +46,7 @@ index 2f9ff1e..6bf6f79 100644
  CONFIG_IMX_SUPPORT=y
  ifeq ($(CONFIG_IMX_SUPPORT),y)
  ccflags-y += -DIMX_SUPPORT
-@@ -650,7 +651,7 @@ moal-objs := $(MOALOBJS)
+@@ -649,7 +650,7 @@ moal-objs := $(MOALOBJS)
  else
  
  default:
@@ -55,10 +56,10 @@ index 2f9ff1e..6bf6f79 100644
  endif
  
 diff --git a/mlan/mlan_init.c b/mlan/mlan_init.c
-index 1d7dec4..f63fa62 100644
+index 3db5448..c574f96 100644
 --- a/mlan/mlan_init.c
 +++ b/mlan/mlan_init.c
-@@ -778,6 +778,8 @@ t_void wlan_init_adapter(pmlan_adapter pmadapter)
+@@ -782,6 +782,8 @@ t_void wlan_init_adapter(pmlan_adapter pmadapter)
  	pmadapter->active_scan_triggered = MFALSE;
  	if (!pmadapter->init_para.ext_scan)
  		pmadapter->ext_scan = EXT_SCAN_TYPE_ENH;
@@ -67,24 +68,24 @@ index 1d7dec4..f63fa62 100644
  	else if (pmadapter->init_para.ext_scan == EXT_SCAN_TYPE_ENH)
  		pmadapter->ext_scan = EXT_SCAN_TYPE_ENH;
  	else
-diff --git a/mlinux/moal_eth_ioctl.c b/mlinux/moal_eth_ioctl.c
-index f093c86..e9d1f3c 100644
---- a/mlinux/moal_eth_ioctl.c
-+++ b/mlinux/moal_eth_ioctl.c
-@@ -6967,7 +6967,7 @@ static int woal_priv_get_ap(moal_private *priv, t_u8 *respbuf, t_u32 respbuflen)
- 		moal_memcpy_ext(priv->phandle, mwr->u.ap_addr.sa_data,
- 				&bss_info.bssid, MLAN_MAC_ADDR_LENGTH,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 80)
--				sizeof(mwr->u.ap_addr.sa_data_min));
-+				sizeof(mwr->u.ap_addr.sa_data));
- #else
- 				sizeof(mwr->u.ap_addr.sa_data));
- #endif
+diff --git a/mlan/mlan_scan.c b/mlan/mlan_scan.c
+index 75105c4..40a4bab 100644
+--- a/mlan/mlan_scan.c
++++ b/mlan/mlan_scan.c
+@@ -5761,7 +5761,7 @@ mlan_status wlan_ret_802_11_scan(mlan_private *pmpriv, HostCmd_DS_COMMAND *resp,
+ 	 *   BSS Descriptions (bss_descript_size as bytesLef) and the command
+ 	 *   response header (S_DS_GEN)
+ 	 */
+-	if (scan_resp_size >
++	if (scan_resp_size >=
+ 	    (bytes_left + sizeof(pscan_rsp->bss_descript_size) +
+ 	     sizeof(pscan_rsp->number_of_sets) + S_DS_GEN)) {
+ 		tlv_buf_size =
 diff --git a/mlinux/moal_init.c b/mlinux/moal_init.c
-index 1979042..343535f 100644
+index a8ece12..e244de9 100644
 --- a/mlinux/moal_init.c
 +++ b/mlinux/moal_init.c
-@@ -3544,7 +3544,7 @@ MODULE_PARM_DESC(
+@@ -3521,7 +3521,7 @@ MODULE_PARM_DESC(
  module_param(ext_scan, int, 0660);
  MODULE_PARM_DESC(
  	ext_scan,
@@ -94,10 +95,10 @@ index 1979042..343535f 100644
  MODULE_PARM_DESC(
  	bootup_cal_ctrl,
 diff --git a/mlinux/moal_pcie.c b/mlinux/moal_pcie.c
-index fc1eedb..acd8840 100644
+index 5beade4..9661285 100644
 --- a/mlinux/moal_pcie.c
 +++ b/mlinux/moal_pcie.c
-@@ -132,6 +132,7 @@ static const struct pci_device_id wlan_ids[] = {
+@@ -135,6 +135,7 @@ static const struct pci_device_id wlan_ids[] = {
  
  	{},
  };
@@ -105,24 +106,26 @@ index fc1eedb..acd8840 100644
  /* moal interface ops */
  static moal_if_ops pcie_ops;
  
-diff --git a/mlinux/moal_shim.c b/mlinux/moal_shim.c
-index 7aebbdf..181c4f2 100644
---- a/mlinux/moal_shim.c
-+++ b/mlinux/moal_shim.c
-@@ -3784,7 +3784,7 @@ mlan_status moal_recv_event(t_void *pmoal, pmlan_event pmevent)
- 			moal_memcpy_ext(priv->phandle, wrqu.ap_addr.sa_data,
- 					pmevent->event_buf, ETH_ALEN,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 80)
--					sizeof(wrqu.ap_addr.sa_data_min));
-+					sizeof(wrqu.ap_addr.sa_data));
- #else
- 					sizeof(wrqu.ap_addr.sa_data));
- #endif
 diff --git a/mlinux/moal_sta_cfg80211.c b/mlinux/moal_sta_cfg80211.c
-index 58d4592..2c8b3ec 100644
+index 23ffe02..57e54ed 100644
 --- a/mlinux/moal_sta_cfg80211.c
 +++ b/mlinux/moal_sta_cfg80211.c
-@@ -5628,6 +5628,20 @@ static int woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
+@@ -1622,6 +1622,14 @@ static mlan_status woal_dnld_chan_attr(moal_private *priv, t_bool is6g,
+ #endif
+ 	wiphy = priv->wdev->wiphy;
+ 
++#if defined(PCIE9097)
++	if (IS_PCIE9097(priv->phandle->card_type)) {
++		PRINTM(MMSG,
++		       "Skip channel attribute download for PS5 IW620\n");
++		goto done;
++	}
++#endif
++
+ 	/* Allocate an IOCTL request buffer */
+ 	req = woal_alloc_mlan_ioctl_req(sizeof(mlan_ds_misc_cfg));
+ 	if (req == NULL) {
+@@ -5778,6 +5786,19 @@ static int woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
  	}
  #endif
  
@@ -139,42 +142,6 @@ index 58d4592..2c8b3ec 100644
 +				   msecs_to_jiffies(1000));
 +		return ret;
 +	}
-+
  	/** Cance remain on channel */
  	woal_cancel_remain_on_channel(priv);
  
-diff --git a/mlinux/moal_uap_wext.c b/mlinux/moal_uap_wext.c
-index f4b6347..5646778 100644
---- a/mlinux/moal_uap_wext.c
-+++ b/mlinux/moal_uap_wext.c
-@@ -244,7 +244,7 @@ static int woal_get_wap(struct net_device *dev, struct iw_request_info *info,
- 		moal_memcpy_ext(priv->phandle, awrq->sa_data,
- 				priv->current_addr, MLAN_MAC_ADDR_LENGTH,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 80)
--				sizeof(awrq->sa_data_min));
-+				sizeof(awrq->sa_data));
- #else
- 				sizeof(awrq->sa_data));
- #endif
-diff --git a/mlinux/moal_wext.c b/mlinux/moal_wext.c
-index 953c60b..694b719 100644
---- a/mlinux/moal_wext.c
-+++ b/mlinux/moal_wext.c
-@@ -590,7 +590,7 @@ static int woal_get_wap(struct net_device *dev, struct iw_request_info *info,
- 		moal_memcpy_ext(priv->phandle, awrq->sa_data, &bss_info.bssid,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 80)
- 				MLAN_MAC_ADDR_LENGTH,
--				sizeof(awrq->sa_data_min));
-+				sizeof(awrq->sa_data));
- #else
- 				MLAN_MAC_ADDR_LENGTH, sizeof(awrq->sa_data));
- #endif
-@@ -3073,7 +3073,7 @@ static int woal_get_scan(struct net_device *dev, struct iw_request_info *info,
- 		moal_memcpy_ext(priv->phandle, iwe.u.ap_addr.sa_data,
- 				&scan_table[i].mac_address, ETH_ALEN,
- #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 80)
--				sizeof(iwe.u.ap_addr.sa_data_min));
-+				sizeof(iwe.u.ap_addr.sa_data));
- #else
- 				sizeof(iwe.u.ap_addr.sa_data));
- #endif
