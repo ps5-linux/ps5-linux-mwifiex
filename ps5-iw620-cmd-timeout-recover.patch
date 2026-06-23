@@ -1,0 +1,71 @@
+diff --git a/mlan/mlan_cmdevt.c b/mlan/mlan_cmdevt.c
+index f433f88..a246c65 100644
+--- a/mlan/mlan_cmdevt.c
++++ b/mlan/mlan_cmdevt.c
+@@ -2838,6 +2838,22 @@ done:
+ 	return ret;
+ }
+ 
++static t_u8 wlan_is_recoverable_cmd_timeout(t_u16 cmd_id)
++{
++	switch (cmd_id) {
++	case HostCmd_CMD_RSSI_INFO:
++	case HostCmd_CMD_802_11_GET_LOG:
++	case HostCmd_CMD_802_11_TX_RATE_QUERY:
++	case HostCmd_CMD_802_11_RF_TX_POWER:
++	case HostCmd_CMD_802_11_SNMP_MIB:
++		return MTRUE;
++	default:
++		return MFALSE;
++	}
++}
++
++#define IW620_MAX_SOFT_CMD_TIMEOUT 3
++
+ /**
+  *  @brief This function handles the timeout of command sending.
+  *          It will re-send the same command again.
+@@ -2914,7 +2930,29 @@ t_void wlan_cmd_timeout_func(t_void *function_context)
+ 	if (pmadapter->hw_status == WlanHardwareStatusInitializing ||
+ 	    pmadapter->hw_status == WlanHardwareStatusGetHwSpec)
+ 		wlan_init_fw_complete(pmadapter);
+-	else {
++	else if (wlan_is_recoverable_cmd_timeout(pmadapter->dbg.timeout_cmd_id) &&
++		 pmadapter->num_cmd_timeout < IW620_MAX_SOFT_CMD_TIMEOUT) {
++		PRINTM(MERROR,
++		       "IW620: soft-recover benign cmd 0x%x timeout (#%d)\n",
++		       pmadapter->dbg.timeout_cmd_id,
++		       pmadapter->num_cmd_timeout);
++		wlan_request_cmd_lock(pmadapter);
++		pcmd_node = pmadapter->curr_cmd;
++		pmadapter->curr_cmd = MNULL;
++		pmadapter->cmd_sent = MFALSE;
++		pmadapter->num_cmd_timeout = 0;
++		if (pcmd_node) {
++			if (pcmd_node->pioctl_buf != MNULL) {
++				pioctl_buf =
++					(mlan_ioctl_req *)pcmd_node->pioctl_buf;
++				pioctl_buf->status_code = MLAN_ERROR_CMD_TIMEOUT;
++			}
++			wlan_insert_cmd_to_free_q(pmadapter, pcmd_node);
++		}
++		wlan_release_cmd_lock(pmadapter);
++		wlan_recv_event(wlan_get_priv(pmadapter, MLAN_BSS_ROLE_ANY),
++				MLAN_EVENT_ID_DRV_DEFER_HANDLING, MNULL);
++	} else {
+ 		/* Signal MOAL to perform extra handling for debugging */
+ 		if (pmpriv) {
+ 			wlan_recv_event(pmpriv, MLAN_EVENT_ID_DRV_DBG_DUMP,
+diff --git a/mlan/mlan_decl.h b/mlan/mlan_decl.h
+index ec4bd65..91d4a03 100644
+--- a/mlan/mlan_decl.h
++++ b/mlan/mlan_decl.h
+@@ -156,7 +156,7 @@ typedef t_s32 t_sval;
+ 
+ #ifdef STA_SUPPORT
+ /** Default Win size attached during ADDBA request */
+-#define MLAN_STA_AMPDU_DEF_TXWINSIZE 64
++#define MLAN_STA_AMPDU_DEF_TXWINSIZE 32
+ /** Default Win size attached during ADDBA response */
+ #define MLAN_STA_AMPDU_DEF_RXWINSIZE 64
+ /** RX winsize for COEX */

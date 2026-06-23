@@ -11,13 +11,15 @@ script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd)
 BUILD_DIR=$script_dir/build
 DRIVER_DIR=$BUILD_DIR/mwifiex
 PATCH_FILE=$script_dir/ps5-iw620.patch
+RECOVER_PATCH=$script_dir/ps5-iw620-cmd-timeout-recover.patch
+KERNEL71_PATCH=$script_dir/ps5-iw620-kernel71-compat.patch
 
 MODULE_DIR=/lib/modules/$KERNEL_RELEASE/extra/ps5-iw620
 MODPROBE_CONF=/etc/modprobe.d/ps5-iw620.conf
 FW_NAME=nxp/pcieuartiw620_combo_v1.bin
 FW_PATH=/lib/firmware/$FW_NAME
 
-MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=1 auto_fw_reload=0 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1"
+MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=1 auto_fw_reload=0 wifi_reset_config=0 sched_scan=0 ps_mode=0 auto_ds=0 amsdu_disable=0"
 
 usage() {
 	cat <<EOF
@@ -76,6 +78,29 @@ prepare_source() {
 		say "PS5 IW620 patch is already applied"
 	else
 		die "patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	[ -f "$RECOVER_PATCH" ] || die "patch file not found: $RECOVER_PATCH"
+	if git_driver apply --check "$RECOVER_PATCH" >/dev/null 2>&1; then
+		say "Applying PS5 IW620 command-timeout recovery patch"
+		git_driver apply "$RECOVER_PATCH"
+	elif git_driver apply -R --check "$RECOVER_PATCH" >/dev/null 2>&1; then
+		say "PS5 IW620 command-timeout recovery patch is already applied"
+	else
+		die "recovery patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	KERNEL_MAJOR=$(uname -r | cut -d. -f1)
+	if [ "$KERNEL_MAJOR" -ge 7 ]; then
+		[ -f "$KERNEL71_PATCH" ] || die "patch file not found: $KERNEL71_PATCH"
+		if git_driver apply --check "$KERNEL71_PATCH" >/dev/null 2>&1; then
+			say "Applying kernel 7.1 cfg80211 API compatibility patch"
+			git_driver apply "$KERNEL71_PATCH"
+		elif git_driver apply -R --check "$KERNEL71_PATCH" >/dev/null 2>&1; then
+			say "Kernel 7.1 cfg80211 API compatibility patch is already applied"
+		else
+			die "kernel71 compat patch does not apply cleanly in $DRIVER_DIR"
+		fi
 	fi
 }
 
