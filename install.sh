@@ -128,6 +128,7 @@ prepare_source() {
 		if git_driver apply --check "$KERNEL71_PATCH" >/dev/null 2>&1; then
 			say "Applying kernel 7.1 cfg80211 API compatibility patch"
 			git_driver apply "$KERNEL71_PATCH"
+			git_driver apply "$KERNEL72_PATCH"
 		elif git_driver apply -R --check "$KERNEL71_PATCH" >/dev/null 2>&1; then
 			say "Kernel 7.1 cfg80211 API compatibility patch is already applied"
 		else
@@ -137,6 +138,7 @@ prepare_source() {
 
 	# Applied last: it touches moal_sta_cfg80211.c, which the kernel71 compat
 	# patch also edits, so it is generated against the post-kernel71 tree.
+	# Also note kernel72 patch does not add or remove any lines, no changes.
 	[ -f "$RTNL_PATCH" ] || die "patch file not found: $RTNL_PATCH"
 	if git_driver apply --check "$RTNL_PATCH" >/dev/null 2>&1; then
 		say "Applying RTNL bounded-wait patch"
