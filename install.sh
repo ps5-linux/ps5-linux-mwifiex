@@ -15,6 +15,9 @@ RECOVER_PATCH=$script_dir/ps5-iw620-cmd-timeout-recover.patch
 KERNEL71_PATCH=$script_dir/ps5-iw620-kernel71-compat.patch
 KERNEL72_PATCH=$script_dir/ps5-iw620-kernel72-compat.patch
 RTNL_PATCH=$script_dir/ps5-iw620-rtnl-bounded-wait.patch
+HE_PATCH=$script_dir/ps5-iw620-he.patch
+TX_PATCH=$script_dir/ps5-iw620-tx-min128.patch
+PRIORITY_PATCH=$script_dir/ps5-iw620-tx-priority.patch
 
 MODULE_DIR=/lib/modules/$KERNEL_RELEASE/extra/ps5-iw620
 MODPROBE_CONF=/etc/modprobe.d/ps5-iw620.conf
@@ -136,7 +139,7 @@ prepare_source() {
 		fi
 	fi
 
-	# Applied last: it touches moal_sta_cfg80211.c, which the kernel71 compat
+	# Applied after compatibility: it touches moal_sta_cfg80211.c, which the kernel71 compat
 	# patch also edits, so it is generated against the post-kernel71 tree.
 	# Also note kernel72 patch does not add or remove any lines, no changes.
 	[ -f "$RTNL_PATCH" ] || die "patch file not found: $RTNL_PATCH"
@@ -148,13 +151,43 @@ prepare_source() {
 	else
 		die "rtnl bounded-wait patch does not apply cleanly in $DRIVER_DIR"
 	fi
+
+	[ -f "$HE_PATCH" ] || die "patch file not found: $HE_PATCH"
+	if git_driver apply --check "$HE_PATCH" >/dev/null 2>&1; then
+		say "Applying IW620 HE capability and block-ack corrections"
+		git_driver apply "$HE_PATCH"
+	elif git_driver apply -R --check "$HE_PATCH" >/dev/null 2>&1; then
+		say "IW620 HE patch is already applied"
+	else
+		die "HE patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	[ -f "$TX_PATCH" ] || die "patch file not found: $TX_PATCH"
+	if git_driver apply --check "$TX_PATCH" >/dev/null 2>&1; then
+		say "Applying IW620 short TX DMA padding"
+		git_driver apply "$TX_PATCH"
+	elif git_driver apply -R --check "$TX_PATCH" >/dev/null 2>&1; then
+		say "IW620 TX padding patch is already applied"
+	else
+		die "TX padding patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	[ -f "$PRIORITY_PATCH" ] || die "patch file not found: $PRIORITY_PATCH"
+	if git_driver apply --check "$PRIORITY_PATCH" >/dev/null 2>&1; then
+		say "Applying IW620 TX priority normalization"
+		git_driver apply "$PRIORITY_PATCH"
+	elif git_driver apply -R --check "$PRIORITY_PATCH" >/dev/null 2>&1; then
+		say "IW620 TX priority patch is already applied"
+	else
+		die "TX priority patch does not apply cleanly in $DRIVER_DIR"
+	fi
 }
 
 build_driver() {
 	prepare_source
 
 	say "Building modules for $KERNEL_RELEASE"
-	make -C "$DRIVER_DIR" CONFIG_OBJTOOL= KERNELDIR="$KERNELDIR" ARCH=x86 -j"$(nproc)"
+	make -C "$DRIVER_DIR" PWD="$DRIVER_DIR" KERNELDIR="$KERNELDIR" ARCH=x86 -j"$(nproc)"
 
 	[ -f "$DRIVER_DIR/mlan.ko" ] || die "missing built module: $DRIVER_DIR/mlan.ko"
 	[ -f "$DRIVER_DIR/moal.ko" ] || die "missing built module: $DRIVER_DIR/moal.ko"

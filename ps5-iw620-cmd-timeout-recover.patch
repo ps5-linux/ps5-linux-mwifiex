@@ -139,19 +139,6 @@ index f433f88..35a0992 100644
  	}
  
  exit:
-diff --git a/mlan/mlan_decl.h b/mlan/mlan_decl.h
-index ec4bd65..91d4a03 100644
---- a/mlan/mlan_decl.h
-+++ b/mlan/mlan_decl.h
-@@ -156,7 +156,7 @@ typedef t_s32 t_sval;
- 
- #ifdef STA_SUPPORT
- /** Default Win size attached during ADDBA request */
--#define MLAN_STA_AMPDU_DEF_TXWINSIZE 64
-+#define MLAN_STA_AMPDU_DEF_TXWINSIZE 32
- /** Default Win size attached during ADDBA response */
- #define MLAN_STA_AMPDU_DEF_RXWINSIZE 64
- /** RX winsize for COEX */
 diff --git a/mlan/mlan_init.c b/mlan/mlan_init.c
 index f63fa62..9ac5ee3 100644
 --- a/mlan/mlan_init.c
