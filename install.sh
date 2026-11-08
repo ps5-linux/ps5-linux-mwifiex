@@ -14,10 +14,12 @@ PATCH_FILE=$script_dir/ps5-iw620.patch
 RECOVER_PATCH=$script_dir/ps5-iw620-cmd-timeout-recover.patch
 KERNEL71_PATCH=$script_dir/ps5-iw620-kernel71-compat.patch
 KERNEL72_PATCH=$script_dir/ps5-iw620-kernel72-compat.patch
+KERNEL73_PATCH=$script_dir/ps5-iw620-kernel73-compat.patch
 RTNL_PATCH=$script_dir/ps5-iw620-rtnl-bounded-wait.patch
 HE_PATCH=$script_dir/ps5-iw620-he.patch
 TX_PATCH=$script_dir/ps5-iw620-tx-min128.patch
 PRIORITY_PATCH=$script_dir/ps5-iw620-tx-priority.patch
+FRESH_FW_PATCH=$script_dir/ps5-iw620-fresh-fw.patch
 
 MODULE_DIR=/lib/modules/$KERNEL_RELEASE/extra/ps5-iw620
 MODPROBE_CONF=/etc/modprobe.d/ps5-iw620.conf
@@ -32,7 +34,7 @@ FW_PATH=/lib/firmware/$FW_NAME
 # Note MODPROBE_CONF (ps5-iw620.conf) sorts AFTER moal.conf, so whatever is set
 # here silently overrides the packaged file. Keep them in sync or the packaged
 # one becomes dead config. Revert to 0 0 0 here if a build regresses on it.
-MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=1 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1"
+MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=2 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1"
 
 # Firmware auto-reset after a hang. OFF by default and deliberately separate:
 # both options are required together (woal_request_fw_reload() rejects every
@@ -132,6 +134,7 @@ prepare_source() {
 			say "Applying kernel 7.1 cfg80211 API compatibility patch"
 			git_driver apply "$KERNEL71_PATCH"
 			git_driver apply "$KERNEL72_PATCH"
+			git_driver apply "$KERNEL73_PATCH"
 		elif git_driver apply -R --check "$KERNEL71_PATCH" >/dev/null 2>&1; then
 			say "Kernel 7.1 cfg80211 API compatibility patch is already applied"
 		else
@@ -180,6 +183,16 @@ prepare_source() {
 		say "IW620 TX priority patch is already applied"
 	else
 		die "TX priority patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	[ -f "$FRESH_FW_PATCH" ] || die "patch file not found: $FRESH_FW_PATCH"
+	if git_driver apply --check "$FRESH_FW_PATCH" >/dev/null 2>&1; then
+		say "Applying IW620 fresh-firmware patch"
+		git_driver apply "$FRESH_FW_PATCH"
+	elif git_driver apply -R --check "$FRESH_FW_PATCH" >/dev/null 2>&1; then
+		say "IW620 fresh-firmware patch is already applied"
+	else
+		die "fresh-firmware patch does not apply cleanly in $DRIVER_DIR"
 	fi
 }
 
