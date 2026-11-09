@@ -14,10 +14,12 @@ generated against the tree the earlier ones produce:
 | `ps5-iw620-cmd-timeout-recover.patch` | Command-timeout handling: always release the timed-out command and wake its ioctl waiter, then decide whether to carry on or declare a hang. |
 | `ps5-iw620-kernel71-compat.patch` | cfg80211 API changes for kernel >= 7 (applied conditionally). |
 | `ps5-iw620-kernel72-compat.patch` | Kernel 7.2 string and cfg80211 API compatibility. |
+| `ps5-iw620-kernel73-compat.patch` | Kernel 7.3 cfg80211 API: management TX and remain-on-channel cookies come from cfg80211; `probe_client` is gone. |
 | `ps5-iw620-rtnl-bounded-wait.patch` | Bounds the firmware round-trips in `woal_cfg80211_dump_station_info()` so a dead firmware cannot strand RTNL. |
 | `ps5-iw620-he.patch` | Corrects the IW620 5 GHz HE profile across firmware configuration, association and cfg80211; requests TX BA timeout zero. |
 | `ps5-iw620-tx-min128.patch` | Pads short IW620 data DMA transfers to 128 bytes while preserving real packet lengths and DMA ownership. |
 | `ps5-iw620-tx-priority.patch` | Maps IW620 STA TX TIDs 1→2, 3→0 and 5→4 within their access categories before queue selection and BA bookkeeping to avoid priority-triggered stalls. |
+| `ps5-iw620-fresh-fw.patch` | Resets the IW620 at probe when firmware from an earlier kernel is still running, so it is downloaded fresh (`ps5_fresh_fw=0` reuses it); reports a failure when association gets no response instead of timing out. |
 
 ### IW620 HE and aggregation
 
@@ -118,9 +120,11 @@ git apply ../ps5-iw620-cmd-timeout-recover.patch || exit 1
 if [ "$(uname -r | cut -d. -f1)" -ge 7 ]; then
     git apply ../ps5-iw620-kernel71-compat.patch || exit 1
     git apply ../ps5-iw620-kernel72-compat.patch || exit 1
+    git apply ../ps5-iw620-kernel73-compat.patch || exit 1
 fi
 for patch in ps5-iw620-rtnl-bounded-wait.patch ps5-iw620-he.patch \
-    ps5-iw620-tx-min128.patch ps5-iw620-tx-priority.patch; do
+    ps5-iw620-tx-min128.patch ps5-iw620-tx-priority.patch \
+    ps5-iw620-fresh-fw.patch; do
     git apply "../$patch" || exit 1
 done
 make
@@ -139,7 +143,7 @@ Equivalent manual load:
 ```sh
 sudo modprobe cfg80211
 sudo insmod ./mlan.ko
-sudo insmod ./moal.ko fw_name=nxp/pcieuartiw620_combo_v1.bin pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=1 auto_fw_reload=0 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1
+sudo insmod ./moal.ko fw_name=nxp/pcieuartiw620_combo_v1.bin pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=2 auto_fw_reload=0 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1
 ```
 
 ## Test
