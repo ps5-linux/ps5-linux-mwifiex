@@ -119,14 +119,25 @@ index 7aebbdf..181c4f2 100644
  					sizeof(wrqu.ap_addr.sa_data));
  #endif
 diff --git a/mlinux/moal_sta_cfg80211.c b/mlinux/moal_sta_cfg80211.c
-index 58d4592..2c8b3ec 100644
+index 58d4592..a797af9 100644
 --- a/mlinux/moal_sta_cfg80211.c
 +++ b/mlinux/moal_sta_cfg80211.c
-@@ -5628,6 +5628,20 @@ static int woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
+@@ -155,6 +155,10 @@ woal_cfg80211_reg_notifier(struct wiphy *wiphy,
+ 			   struct regulatory_request *request);
+ 
+ #if CFG80211_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
++static int ps5_fake_connected_scan = 1;
++module_param(ps5_fake_connected_scan, int, 0644);
++MODULE_PARM_DESC(ps5_fake_connected_scan, "1: Fake-complete scans while connected (default); 0: Pass them to the firmware");
++
+ static int woal_cfg80211_scan(struct wiphy *wiphy,
+ 			      struct cfg80211_scan_request *request);
+ #else
+@@ -5628,6 +5632,20 @@ static int woal_cfg80211_scan(struct wiphy *wiphy, struct net_device *dev,
  	}
  #endif
  
-+	if (priv->media_connected == MTRUE) {
++	if (priv->media_connected == MTRUE && ps5_fake_connected_scan) {
 +		PRINTM(MMSG,
 +		       "Fake-complete connected-state scan on %s for PS5 IW620 stability\n",
 +		       dev->name);

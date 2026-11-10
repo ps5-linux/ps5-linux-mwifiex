@@ -34,7 +34,9 @@ FW_PATH=/lib/firmware/$FW_NAME
 # Note MODPROBE_CONF (ps5-iw620.conf) sorts AFTER moal.conf, so whatever is set
 # here silently overrides the packaged file. Keep them in sync or the packaged
 # one becomes dead config. Revert to 0 0 0 here if a build regresses on it.
-MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=2 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1"
+#
+# country_ie_ignore=0 beacon_hints=0: follow the AP country (needs wireless-regdb).
+MOAL_OPTIONS="fw_name=$FW_NAME pcie_int_mode=1 drv_mode=1 cfg80211_wext=4 sta_name=mlan ext_scan=2 wifi_reset_config=0 sched_scan=0 ps_mode=2 auto_ds=2 amsdu_disable=1 country_ie_ignore=0 beacon_hints=0"
 
 # Firmware auto-reset after a hang. OFF by default and deliberately separate:
 # both options are required together (woal_request_fw_reload() rejects every
@@ -248,6 +250,9 @@ install_driver() {
 	install -m 0644 "$DRIVER_DIR/moal.ko" "$MODULE_DIR/moal.ko"
 
 	write_modprobe_config
+	if [ ! -e /lib/firmware/regulatory.db ] && [ ! -e /usr/lib/firmware/regulatory.db ]; then
+		say "Note: regulatory.db not found. Install wireless-regdb so Wi-Fi can follow the AP country."
+	fi
 
 	say "Running depmod for $KERNEL_RELEASE"
 	depmod "$KERNEL_RELEASE"
