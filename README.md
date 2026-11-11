@@ -20,6 +20,7 @@ generated against the tree the earlier ones produce:
 | `ps5-iw620-tx-min128.patch` | Pads short IW620 data DMA transfers to 128 bytes while preserving real packet lengths and DMA ownership. |
 | `ps5-iw620-tx-priority.patch` | Maps IW620 STA TX TIDs 1→2, 3→0 and 5→4 within their access categories before queue selection and BA bookkeeping to avoid priority-triggered stalls. |
 | `ps5-iw620-fresh-fw.patch` | Resets the IW620 at probe when firmware from an earlier kernel is still running, so it is downloaded fresh (`ps5_fresh_fw=0` reuses it); reports a failure when association gets no response instead of timing out. |
+| `ps5-iw620-no-tdls.patch` | Stops advertising TDLS: the IW620 firmware rejects `TDLS_OPERATION` (0x122), and a peer's setup request then ends in a disconnect and a scan command that never returns. Without the flags `wpa_supplicant` declines the request. |
 
 ### IW620 HE and aggregation
 
