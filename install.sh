@@ -20,6 +20,7 @@ HE_PATCH=$script_dir/ps5-iw620-he.patch
 TX_PATCH=$script_dir/ps5-iw620-tx-min128.patch
 PRIORITY_PATCH=$script_dir/ps5-iw620-tx-priority.patch
 FRESH_FW_PATCH=$script_dir/ps5-iw620-fresh-fw.patch
+NO_TDLS_PATCH=$script_dir/ps5-iw620-no-tdls.patch
 
 MODULE_DIR=/lib/modules/$KERNEL_RELEASE/extra/ps5-iw620
 MODPROBE_CONF=/etc/modprobe.d/ps5-iw620.conf
@@ -195,6 +196,16 @@ prepare_source() {
 		say "IW620 fresh-firmware patch is already applied"
 	else
 		die "fresh-firmware patch does not apply cleanly in $DRIVER_DIR"
+	fi
+
+	[ -f "$NO_TDLS_PATCH" ] || die "patch file not found: $NO_TDLS_PATCH"
+	if git_driver apply --check "$NO_TDLS_PATCH" >/dev/null 2>&1; then
+		say "Applying IW620 no-TDLS patch"
+		git_driver apply "$NO_TDLS_PATCH"
+	elif git_driver apply -R --check "$NO_TDLS_PATCH" >/dev/null 2>&1; then
+		say "IW620 no-TDLS patch is already applied"
+	else
+		die "no-TDLS patch does not apply cleanly in $DRIVER_DIR"
 	fi
 }
 
